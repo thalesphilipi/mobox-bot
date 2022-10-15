@@ -15,6 +15,9 @@ from web3.contract import Contract
 from web3.middleware import geth_poa_middleware
 
 import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 
@@ -26,8 +29,8 @@ aiohttp_jinja2.setup(
 )
 
 
-address = '0xb34ab5D9dde26Aac549522Dca78315a9eFeFf20b'
-private = 'd0aaacf8c9246e679e63a96f69fa141c1420f20a13aebd06e3292a4b949a4f8a'
+address = os.getenv('WALLET_PUBLIC')
+private = os.getenv('WALLET_PRIVATE')
 
 bsc = 'https://bsc-dataseed.binance.org/'
 
