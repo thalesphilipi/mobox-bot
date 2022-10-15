@@ -1,0 +1,5 @@
+pandas
+regex
+web3
+aiohttp-jinja2
+aiohttp
