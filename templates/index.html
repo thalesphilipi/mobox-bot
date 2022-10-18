@@ -2,11 +2,12 @@
     <head>
         <!-- CSS only -->
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
         <!-- JavaScript Bundle with Popper -->
     </head>
     <body style="background-color: rgb(201, 201, 201);">
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
         <div style="width: 60%;" class="card container rounded bg-light border px-5 py-3 pb-2 mt-3">
             <div class="row justify-content-between">
                 <div class="col-4">
@@ -23,9 +24,9 @@
                 </div>
                 <div class="col-md-auto">
                     {% if running %}
-                    <button id="stop" class="btn btn-secondary btn-sm">Stop bot</button>
+                    <button id="stop" class="btn btn-secondary">Stop bot</button>
                     {% else %}
-                    <button id="start" class="btn btn-secondary btn-sm">Start bot</button>
+                    <button id="start" class="btn btn-secondary">Start bot</button>
                     {% endif %}
                 </div>
             </div>
@@ -35,6 +36,16 @@
                 <form id="filter" action="/filter" method="post">
                     <div class="input-group">
                         <!-- <span class="input-group-text">Add filter</span> -->
+
+                        <div class="input-group-prepend">
+                            <button class="btn btn-outline-secondary dropdown-toggle" id="type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Quality</button>
+                            <div class="dropdown-menu">
+                              <button class="dropdown-item settype">Momo</button>
+                              <button class="dropdown-item settype">Quality</button>
+                              <button class="dropdown-item settype">Gem</button>
+                            </div>
+                        </div>
+
                         <input class="form-control" type="text" id="quality" name="quality" list="qualities" placeholder="Quality">
                         <datalist id="qualities">
                             <option value=1>Common</option>              
@@ -44,21 +55,31 @@
                             <option value=5>Epic</option>              
                             <option value=6>Legendary</option>              
                         </datalist>
+
                         <input class="form-control" type="text" id="momo" name="momo" list="momos" placeholder="Momo">
                         <datalist id="momos">
                             {% for key, value in momos.items() %}
                             <option value={{key}}>{{value.name}} {{qualities[value.quality|int]}}</option>
                             {% endfor %}
                         </datalist>
+
+
+                        <input class="form-control" type="text" id="gem" name="gem" list="gems" placeholder="Gem">
+                        <datalist id="gems">
+                            {% for key, value in momos.items() %}
+                            <option value={{key}}>{{value.name}} {{qualities[value.quality|int]}}</option>
+                            {% endfor %}
+                        </datalist>
+
                         <input type="number" class="form-control" step="0.01" id="price" name="price" placeholder="Price below">
                         <input type="number" class="form-control" step="0.01" id="hash" name="hash" placeholder="Hash rate below">
-                        <button type="submit" class="btn btn-secondary btn-sm">Add filter</button>
+                        <button type="submit" class="btn btn-secondary">Add filter</button>
                     </div>
                 </form>
             </div>
             <div class="row">
                 {% if filters %}
-                <table class="table table-sm">
+                <table class="table">
                     <thead>
                         <tr>
                           <th>#</th>
@@ -91,7 +112,7 @@
         </div>
         <div style="width: 60%;" class="container rounded bg-light border px-5 py-3 mt-5">
             {% if bought %}
-            <table class="table table-sm">
+            <table class="table">
                 <thead>
                     <tr>
                       <th>Hash</th>
@@ -112,7 +133,14 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-            </table>    
+            </table>
+            <nav>
+                <ul class="pagination">
+                  <li class="page-item"><a class="page-link">Previous</a></li>
+                  <li class="page-item"><a class="page-link">1</a></li>
+                  <li class="page-item"><a class="page-link">Next</a></li>
+                </ul>
+            </nav>   
             {% else %}
             <b class="text-dark">No Momos bought yet.</b>
             {% endif %}
@@ -127,6 +155,12 @@
                     location.reload();
                 });
             return false;
+            });
+        });
+        $(function() {
+            $('button.settype').on('click', function(e) {
+                data = e.target.innerHTML
+                $('button#type').html(data)
             });
         });
         $(function() {
