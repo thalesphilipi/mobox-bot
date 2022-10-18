@@ -67,7 +67,7 @@ logging.info(f'Connected to BSC: {w3.isConnected()}')
 
 # data management constants
 DATA_MOMOS_PATH = 'data/momos.json'
-DATA_MOMO_FILTERS_PATH = 'data/filters.json'
+DATA_FILTERS_PATH = 'data/filters.json'
 DATA_BOUGHTS_PATH = 'data/bought.json'
 DATA_GEMS_PATH = 'data/gems.json'
 
@@ -88,7 +88,7 @@ def persist_dict(path : str, data : dict) -> dict:
 
 data_momos = open_dict(DATA_MOMOS_PATH)
 data_gems = open_dict(DATA_GEMS_PATH)
-data_momo_filters = open_dict(DATA_MOMO_FILTERS_PATH)
+data_filters = open_dict(DATA_FILTERS_PATH)
 data_boughts = open_dict(DATA_BOUGHTS_PATH)
 
 
@@ -148,16 +148,15 @@ async def data_updater():
     async with http.ClientSession() as session:
         
         while True:
-            # try:
             url = 'https://www.mobox.io/momo/js/app.1f433f44.js'
             async with session.get(url) as resp:
                 
                 data = await resp.text()
 
                 momos_data = re.findall('{prototype:([0-9]+?),tokenName:\"Name_(.*?)\",quality:([0-9]+?),category:([0-9]+?),mmNum:([0-9]+?),cnName:\".*?\"}', data)
+                gem_data = re.findall('\{id:([0-9]+?),num:.*?,productivityRate:.*?\}', data, flags=re.DOTALL)
                 names = re.findall('\"Name_([0-9]*?)\":\"([A-Za-z0-9À-Ÿ\-\'\.\\\ ]*?)\"', data, flags=re.DOTALL)
 
-                gem_data = re.findall('([0-9]+?):{id:[0-9]+?,num:[0-9]+?,productivityRate:[0-9]+?}', data, flags=re.DOTALL)
                 gem_ids = list(map(int, set(gem_data)))
 
                 names = dict(list(set(names)))
@@ -194,13 +193,16 @@ def mobox_price_to_contract_price(price):
 # set bid to smart contract
 async def set_bid(data : dict, ismomo=True):
 
+
+        global current_nonce
+
         try:
 
             start_time = data['uptime']
             id = data['id'] if ismomo else data['orderId']
             id = f'{id}_{start_time}'            
 
-            data_boughts[id] = {'hash' : 'pending transaction..', 'data' : data, 'error' : ''}
+            data_boughts[id] = {'hash' : '/', 'data' : data, 'status' : 'pending'}
 
             # set price
             price = data['nowPrice'] if ismomo else data['price']
@@ -219,8 +221,9 @@ async def set_bid(data : dict, ismomo=True):
 
 
             index = data['index'] if ismomo else data['orderId']
-            transaction = contract.functions.bid(_auctor_address, index, start_time, price)
-            if not ismomo:
+            if ismomo:
+                transaction = contract.functions.bid(_auctor_address, index, start_time, price)
+            else:
                 transaction = contract.functions.bid(_auctor_address, index, price)
             
             async with nonce_lock:
@@ -247,17 +250,20 @@ async def set_bid(data : dict, ismomo=True):
                 till = start_time + 114
                 await asyncio.sleep(till - now)
 
+            else:
+                await asyncio.sleep(0)
+
             # send transaction
             # tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
             logging.warning(f'executed bid at {int(time())}')
 
             # data_boughts[id]['hash'] = tx_hash.hex()
-            data_boughts[id]['hash'] = 'test'
+            data_boughts[id]['status'] = 'success'
             persist_dict(DATA_BOUGHTS_PATH, data_boughts)
 
         except Exception as err:
 
-            data_boughts[id] = {'hash' : 'error', 'data' : data, 'error' : str(err)}
+            data_boughts[id] = {'hash' : 'error', 'data' : data, 'status' : 'error', 'msg' : str(err)}
             persist_dict(DATA_BOUGHTS_PATH, data_boughts)
 
 
@@ -265,7 +271,7 @@ async def set_bid(data : dict, ismomo=True):
 # crawl momos and gems
 async def search_in_marketplace() -> pd.DataFrame:
 
-    global bot_running, data_momo_filters, data_boughts
+    global bot_running, data_filters, data_boughts
 
     def filter_momo_condition(row):
 
@@ -273,19 +279,20 @@ async def search_in_marketplace() -> pd.DataFrame:
         price = int(row['nowPrice'])
         hashrate =  int(row['lvHashrate'])
 
-        start_time = data['uptime']
-        id = data['id']
+        start_time = row['uptime']
+        id = row['id']
         id = f'{id}_{start_time}' 
 
-        if f'{id}_{start_time}' in data_boughts:
+        if id in data_boughts:
             return False
 
-        for _, filter in data_momo_filters.items():
-            if (prototype == filter['momo'] or filter['momo'] == -1):
-                if ((str(prototype) in data_momos and data_momos[str(prototype)]['quality'] == str(filter['quality'])) or filter['quality'] == -1):
-                    if ((price < filter['price'] * 1000000000) or filter['price'] == -1):
-                        if (((price / 1000000000 / hashrate) < filter['hash']) or filter['hash'] == -1):
-                            return True
+        for _, filter in data_filters.items():
+            if (filter['type'] != 'gem'):
+                if (not (filter['type'] == 'momo') or prototype == int(filter['key'])):
+                    if (not (filter['type'] == 'quality') or (str(prototype) in data_momos and data_momos[str(prototype)]['quality'] == str(filter['key']))):
+                        if (not (filter['filterby'] == 'price') or (price < float(filter['value']) * 1000000000)):
+                            if (not (filter['filterby'] == 'hash') or ((price / 1000000000 / hashrate) < float(filter['value']))):
+                                return True
         return False
 
     def filter_gem_condition(row):
@@ -297,22 +304,26 @@ async def search_in_marketplace() -> pd.DataFrame:
         if len(ids) != 1 or len(amounts) != 1:
             return False
 
-        start_time = data['uptime']
-        id = data['orderId']
+        start_time = row['uptime']
+        id = row['orderId']
         id = f'{id}_{start_time}'   
 
-        if f'{id}_{start_time}' in data_boughts:
+        if id in data_boughts:
             return False
 
-        for _, filter in data_momo_filters.items():
-            if (int(ids[0]) == filter['gem']):
-                return False
-            return False
+        for _, filter in data_filters.items():
+            if (filter['type'] == 'gem'):
+                if (int(ids[0]) == int(filter['key'])):
+                    if (filter['filterby'] == 'price' and (price / int(amounts[0])) < float(filter['value']) * 1000000000):
+                        return True
+
         return False
+
 
     async with http.ClientSession() as session:
         while bot_running:
-
+            logging.warning('iter')
+            start = int(time())
             async with session.get('https://nftapi.mobox.io/auction/search/BNB?page=1&limit=10000') as resp:
                 data = await resp.json()
                 df = pd.DataFrame(data['list'])
@@ -331,48 +342,8 @@ async def search_in_marketplace() -> pd.DataFrame:
                         logging.warning('set gem bid')
                         asyncio.create_task(set_bid(gem.to_dict(), ismomo=False))
 
-            await asyncio.sleep(5)
-            logging.warning('iter')
-
-
-async def search_gems_in_marketplace() -> pd.DataFrame:
-
-    global bot_running, data_momo_filters, data_boughts
-
-    def filter_condition(row):
-
-        prototype = int(row['prototype'])
-        price = int(row['nowPrice'])
-        hashrate =  int(row['lvHashrate'])
-        id = row['id']
-        start_time = row['uptime']
-
-        if f'{id}_{start_time}' in data_boughts:
-            logging.warning(f'already bought {id}_{start_time}')
-            return False
-
-        for _, filter in data_momo_filters.items():
-            if (prototype == filter['momo'] or filter['momo'] == -1):
-                if ((str(prototype) in data_momos and data_momos[str(prototype)]['quality'] == str(filter['quality'])) or filter['quality'] == -1):
-                    if ((price < filter['price'] * 1000000000) or filter['price'] == -1):
-                        if (((price / 1000000000 / hashrate) < filter['hash']) or filter['hash'] == -1):
-                            return True
-        return False
-
-    async with http.ClientSession() as session:
-        while bot_running:
-            async with session.get('https://nftapi.mobox.io/gem_auction/search/BNB?page=1&limit=1000') as resp:
-                data = await resp.json()
-                df = pd.DataFrame(data['list'])
-                filtered = df.apply(filter_condition, axis=1)
-                df = df[filtered]
-                if not df.empty:
-                    for _, momo in df.iterrows():
-                        logging.warning('set bid')
-                        asyncio.create_task(set_bid(momo.to_dict()))
-
-            await asyncio.sleep(5)
-            logging.warning('iter')
+            now = int(time())
+            await asyncio.sleep((start + 5) - now)
 
 
 async def start():
@@ -389,52 +360,45 @@ async def start():
 @aiohttp_jinja2.template('index.html')
 async def index(request: web.Request):
    context = {
-    'momos' : data_momos,
-    'gems' : data_gems,
-    'filters' : data_momo_filters,
-    'bought' : data_boughts,
-    'qualities': momo_qualities,
-    'running' : bot_running
+    'data': {
+        'momo' : data_momos,
+        'gem' : data_gems,
+        'filter' : data_filters,
+        'bought' : data_boughts,
+        'quality': momo_qualities,
+        'running' : bot_running
+    },
    }
    return context
 
 @routes.post('/filter')
 async def add_filter(request: web.Request):
     data = await request.post()
+    
+    type = data.get('type', str)
+    key = data.get(type, str)
+    filterby = data.get('filterby', str)
+    value = data.get(filterby, str)
 
-    quality = data.get('quality', str)
-    quality = -1 if quality == '' else int(quality)
-    momo = data.get('momo', str)
-    momo = -1 if momo == '' else int(momo)
-    price = data.get('price', str)
-    price = -1 if price == '' else float(price)
-    hash = data.get('hash', str)
-    hash = -1 if hash == '' else float(hash)
-
-    quality_exist = quality in momo_qualities.keys()
-    momo_exist = str(momo) in data_momos.keys() or momo == -1
-    least_one_key = bool(momo == -1) != bool(quality == -1)
-    least_one_val = bool(price == -1) != bool(hash == -1)
-    if (quality_exist and momo_exist and least_one_key and least_one_val):
-        ids = [int(k) for k,_ in data_momo_filters.items()]
+    if not (type == 'gem' and filterby == 'hash'):
+        ids = [int(k) for k,_ in data_filters.items()]
         ids = ids if len(ids) else [-1]
-        data_momo_filters[str(max(ids) + 1)] = {
-            'quality' : quality,
-            'momo' : momo,
-            'price' : price,
-            'hash' : hash
+        data_filters[str(max(ids) + 1)] = {
+            'type' : type,
+            'key' : key,
+            'filterby' : filterby,
+            'value' : value
         }
-        with open('data/momo_filters.json', 'w') as file:
-            file.write(json.dumps(data_momo_filters))
+        persist_dict(DATA_FILTERS_PATH, data_filters)
+        return web.json_response({'msg' : 'added'})
 
-    return web.json_response({'msg' : 'added'})
+    return web.json_response({'msg' : 'wrong input'})
 
 @routes.post('/filter/{id}')
 async def delete_filter(request: web.Request):
     id = request.match_info.get('id', None)
-    del data_momo_filters[id]
-    with open('data/momo_filters.json', 'w') as file:
-        file.write(json.dumps(data_momo_filters))
+    del data_filters[id]
+    persist_dict(DATA_FILTERS_PATH, data_filters)
 
     return web.json_response({'msg' : 'deleted'})
 

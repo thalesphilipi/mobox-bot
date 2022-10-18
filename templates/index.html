@@ -10,11 +10,11 @@
     <body style="background-color: rgb(201, 201, 201);">
         <div style="width: 60%;" class="card container rounded bg-light border px-5 py-3 pb-2 mt-3">
             <div class="row justify-content-between">
-                <div class="col-4">
+                <div class="col-10">
                     <a>
-                        Bot status:
+                        Bot:
                         <span>
-                        {% if running %}
+                        {% if data['running'] %}
                             <b class="text-success">Active</b>
                         {% else %}
                             <b class="text-danger">Inactive</b>
@@ -23,10 +23,10 @@
                     </a>
                 </div>
                 <div class="col-md-auto">
-                    {% if running %}
-                    <button id="stop" class="btn btn-secondary">Stop bot</button>
+                    {% if data['running'] %}
+                    <button id="stop" class="btn btn-secondary btm-sm">Stop bot</button>
                     {% else %}
-                    <button id="start" class="btn btn-secondary">Start bot</button>
+                    <button id="start" class="btn btn-secondary btm-sm">Start bot</button>
                     {% endif %}
                 </div>
             </div>
@@ -34,72 +34,79 @@
         <div style="width: 60%;" class="container rounded bg-light border px-5 py-3 mt-2">
             <div class="row">
                 <form id="filter" action="/filter" method="post">
-                    <div class="input-group">
-                        <!-- <span class="input-group-text">Add filter</span> -->
-
-                        <div class="input-group-prepend">
-                            <button class="btn btn-outline-secondary dropdown-toggle" id="type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Quality</button>
-                            <div class="dropdown-menu">
-                              <button class="dropdown-item settype">Momo</button>
-                              <button class="dropdown-item settype">Quality</button>
-                              <button class="dropdown-item settype">Gem</button>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="type-input" name="type" value="quality" hidden>
+                            <div class="input-group-prepend">
+                                <button class="btn btn-outline-secondary dropdown-toggle input-group-text" id="type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Quality</button>
+                                <div class="dropdown-menu">
+                                  <a class="dropdown-item settype">Momo</a>
+                                  <a class="dropdown-item settype">Quality</a>
+                                  <a class="dropdown-item settype">Gem</a>
+                                </div>
                             </div>
+    
+                            <input class="form-control" type="text" id="quality" name="quality" list="qualities" placeholder="Select Quality">
+                            <datalist id="qualities">
+                                <option value=1>Common</option>              
+                                <option value=2>Uncommon</option>              
+                                <option value=3>Unique</option>              
+                                <option value=4>Rare</option>              
+                                <option value=5>Epic</option>              
+                                <option value=6>Legendary</option>              
+                            </datalist>
+    
+                            <input class="form-control" type="text" id="momo" name="momo" list="momos" placeholder="Select Momo" style="display: none;">
+                            <datalist id="momos">
+                                {% for key, value in data['momo'].items() %}
+                                <option value={{key}}>{{value.name}} {{data['quality'][value.quality|int]}}</option>
+                                {% endfor %}
+                            </datalist>
+    
+    
+                            <input class="form-control" type="text" id="gem" name="gem" list="gems" placeholder="Select Gem" style="display: none;">
+                            <datalist id="gems">
+                                {% for key, value in data['gem'].items() %}
+                                <option value={{key}}>{{value.name}} {{value.level}}</option>
+                                {% endfor %}
+                            </datalist>
+                            <input type="text" class="form-control" id="filter-input" name="filterby" value="price" hidden>
+                            <div class="input-group-prepend">
+                                <button class="btn btn-outline-secondary dropdown-toggle input-group-text" id="filterby" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Price</button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item setfilterby">Price</a>
+                                    <a class="dropdown-item setfilterby">Hash</a>
+                                </div>
+                            </div>
+    
+                            <input type="number" class="form-control" step="0.01" id="price" name="price" placeholder="Price Below">
+                            <input type="number" class="form-control" step="0.01" id="hash" name="hash" placeholder="Hash rate Below" style="display: none;">    
+     
+                            <button type="submit" class="btn btn-secondary">Add filter</button>
                         </div>
 
-                        <input class="form-control" type="text" id="quality" name="quality" list="qualities" placeholder="Quality">
-                        <datalist id="qualities">
-                            <option value=1>Common</option>              
-                            <option value=2>Uncommon</option>              
-                            <option value=3>Unique</option>              
-                            <option value=4>Rare</option>              
-                            <option value=5>Epic</option>              
-                            <option value=6>Legendary</option>              
-                        </datalist>
-
-                        <input class="form-control" type="text" id="momo" name="momo" list="momos" placeholder="Momo">
-                        <datalist id="momos">
-                            {% for key, value in momos.items() %}
-                            <option value={{key}}>{{value.name}} {{qualities[value.quality|int]}}</option>
-                            {% endfor %}
-                        </datalist>
-
-
-                        <input class="form-control" type="text" id="gem" name="gem" list="gems" placeholder="Gem">
-                        <datalist id="gems">
-                            {% for key, value in momos.items() %}
-                            <option value={{key}}>{{value.name}} {{qualities[value.quality|int]}}</option>
-                            {% endfor %}
-                        </datalist>
-
-                        <input type="number" class="form-control" step="0.01" id="price" name="price" placeholder="Price below">
-                        <input type="number" class="form-control" step="0.01" id="hash" name="hash" placeholder="Hash rate below">
-                        <button type="submit" class="btn btn-secondary">Add filter</button>
                     </div>
                 </form>
             </div>
             <div class="row">
-                {% if filters %}
+                {% if data['filter'] %}
                 <table class="table">
                     <thead>
                         <tr>
-                          <th>#</th>
-                          <th>Quality</th>
-                          <th>Momo</th>
-                          <th>Price</th>
-                          <th>Hash</th>
-                          <th>Action</th>
+                          <th>Key</th>
+                          <th>Filter By</th>
+                          <th>Delete</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for key, value in filters.items() %}
+                        {% for key, elem in data['filter'].items() %}
                         <tr>
-                          <td>{{ key }}</td>
-                          <td>{{ '-' if value.quality == -1 else qualities[value.quality] }}</td>
-                          <td>{{ '-' if value.momo == -1 else momos[value.momo|string]['name'] + ' ' + qualities[momos[value.momo|string]['quality']|int] }}</td>
-                          <td>{{ '-' if value.price == -1 else value.price }} {{ '' if value.price == -1 else 'BUSD' }} </td>
-                          <td>{{ '-' if value.hash == -1 else value.hash }} {{ '' if value.hash == -1 else 'BUSD/hash' }} </td>
+                          <td style="text-transform:capitalize">
+                                {{ elem.type + ': ' + (data[elem.type][elem.key|int] if elem.type == 'quality' else data[elem.type][elem.key]['name'] + ' ' + data['quality'][data[elem.type][elem.key]['quality']|int] if elem.type == 'momo' else data[elem.type][elem.key]['name'] + ' ' + data[elem.type][elem.key]['level']) }}
+                          </td>
+                          <td style="text-transform:capitalize;">{{ elem.filterby + ': ' }}<b>{{elem.value|string }}</b></td>
                           <td>
-                            <button id="{{ key }}" class="delete btn btn-danger btn-sm">Delete filter</button>
+                            <button id="{{ key }}" class="delete btn btn-danger btn-sm">Delete</button>
                           </td>
                         </tr>
                         {% endfor %}
@@ -111,42 +118,42 @@
             </div>
         </div>
         <div style="width: 60%;" class="container rounded bg-light border px-5 py-3 mt-5">
-            {% if bought %}
+            {% if data['bought'] %}
             <table class="table">
                 <thead>
                     <tr>
-                      <th>Hash</th>
-                      <th>Momo</th>
-                      <th>Quality</th>
+                      <th>Name</th>
                       <th>Price</th>
-                      <th>Hash</th>
+                      <th class="d-none d-lg-table-cell">HashRate</th>
+                      <th class="d-none d-lg-table-cell">BUSD/hash</th>
+                      <th>Status</th>
+                      <!-- <th>Hash</th> -->
                     </tr>
                 </thead>
                 <tbody>
-                    {% for key, value in bought.items() %}
-                    <tr>
-                      <td><a href="{{ 'https://bscscan.com/tx/' + value.hash if value.hash|length > 50 else ''}}">{{ value.hash[0:40] + '...' }}</a></td>
-                      <td>{{ momos[value.data.prototype|string]['name'] }}</td>
-                      <td>{{ qualities[momos[value.data.prototype|string]['quality']|int] }}</td>
-                      <td>{{ value.data.nowPrice / 1000000000 }} BUSD</td>
-                      <td>{{ value.data.nowPrice / 1000000000 / value.data.lvHashrate }} BUSD</td>
+                    {% for key, value in data['bought'].items() %}
+                    <tr class='clickable-row' data-href="{{ 'https://bscscan.com/tx/' + value.hash }}">
+                      <td>{{ data['momo'][value['data']['ids'][0]]['name'] + ' ' + data['quality'][data['momo'][value['data']['ids'][0]]['quality']|int] if key.startswith('bnb') else '(' + value['data']['amounts'][0] + 'x) ' + data['gem'][value['data']['ids'][0]]['name'] + ' ' + data['gem'][value['data']['ids'][0]]['level'] }}</td>
+                      <td>{{ value['data']['nowPrice']/1000000000 if key.startswith('bnb') else value['data']['price']/1000000000 }}</td>
+                      <td class="d-none d-lg-table-cell">{{ value['data']['hashrate'] if key.startswith('bnb') else '-'}}</td>
+                      <td class="d-none d-lg-table-cell">{{ value['data']['nowPrice']/1000000000/value['data']['hashrate'] if key.startswith('bnb') else '-'}}</td>
+                      <td>{{ value.status }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <nav>
-                <ul class="pagination">
-                  <li class="page-item"><a class="page-link">Previous</a></li>
-                  <li class="page-item"><a class="page-link">1</a></li>
-                  <li class="page-item"><a class="page-link">Next</a></li>
-                </ul>
-            </nav>   
+
             {% else %}
             <b class="text-dark">No Momos bought yet.</b>
             {% endif %}
         </div>
     </body>
     <script>
+        $(function() {
+            $(".clickable-row").click(function() {
+                window.open($(this).data("href"),'_blank');
+            });
+        })
         $(function() {
             $('button#stop').on('click', function(e) {
             e.preventDefault()
@@ -158,14 +165,25 @@
             });
         });
         $(function() {
-            $('button.settype').on('click', function(e) {
+            $('a.settype').on('click', function(e) {
                 data = e.target.innerHTML
+                $('#type-input').val(data.toLowerCase())
                 $('button#type').html(data)
+                $('#gem, #momo, #quality').hide()
+                $(`#${data.toLowerCase()}`).show()
+            });
+        });
+        $(function() {
+            $('a.setfilterby').on('click', function(e) {
+                data = e.target.innerHTML
+                $('#filter-input').val(data.toLowerCase())
+                $('button#filterby').html(data)
+                $('#price, #hash').hide()
+                $(`#${data.toLowerCase()}`).show()
             });
         });
         $(function() {
             $('button#start').on('click', function(e) {
-            console.log('hi')
             e.preventDefault()
             $.post('/start',
                 function(data) {
