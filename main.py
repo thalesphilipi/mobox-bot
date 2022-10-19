@@ -168,7 +168,7 @@ async def data_updater():
                     'name' : names[momo[1]]
                 } for momo in momos_data }
 
-                data_gems = { id : {
+                data_gems = { str(id) : {
                     'level' : gem_levels[id % 100],
                     'name': gem_name[id - (id%100)],
                     'color': gem_color[id - (id%100)]
