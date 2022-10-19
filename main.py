@@ -254,10 +254,10 @@ async def set_bid(data : dict, ismomo=True):
                 await asyncio.sleep(0)
 
             # send transaction
-            # tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
+            tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
             logging.warning(f'executed bid at {int(time())}')
 
-            # data_boughts[id]['hash'] = tx_hash.hex()
+            data_boughts[id]['hash'] = tx_hash.hex()
             data_boughts[id]['status'] = 'success'
             persist_dict(DATA_BOUGHTS_PATH, data_boughts)
 
