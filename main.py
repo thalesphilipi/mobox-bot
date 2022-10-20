@@ -380,7 +380,12 @@ async def add_filter(request: web.Request):
     filterby = data.get('filterby', str)
     value = data.get(filterby, str)
 
-    if not (type == 'gem' and filterby == 'hash'):
+    correct_quality = not (type == 'quality') or (int(key) in momo_qualities)
+    correct_gem = not (type == 'gem') or (key in data_gems)
+    correct_momo = not (type == 'momo') or (key in data_momos)
+    no_gem_hash = not (type == 'gem' and filterby == 'hash')
+
+    if correct_quality and correct_gem and correct_momo and no_gem_hash:
         ids = [int(k) for k,_ in data_filters.items()]
         ids = ids if len(ids) else [-1]
         data_filters[str(max(ids) + 1)] = {

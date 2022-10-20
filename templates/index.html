@@ -133,7 +133,7 @@
                 <tbody>
                     {% for key, value in data['bought'].items() %}
                     <tr class='clickable-row' data-href="{{ 'https://bscscan.com/tx/' + value.hash }}">
-                      <td>{{ data['momo'][value['data']['ids'][0]]['name'] + ' ' + data['quality'][data['momo'][value['data']['ids'][0]]['quality']|int] if key.startswith('bnb') else '(' + value['data']['amounts'][0] + 'x) ' + data['gem'][value['data']['ids'][0]]['name'] + ' ' + data['gem'][value['data']['ids'][0]]['level'] }}</td>
+                      <td>{{ data['momo'][value['data']['prototype']|string]['name'] + ' ' + data['quality'][data['momo'][value['data']['prototype']|string]['quality']|int] if key.startswith('bnb') else '(' + value['data']['amounts'][0] + 'x) ' + data['gem'][value['data']['ids'][0]]['name'] + ' ' + data['gem'][value['data']['ids'][0]]['level'] }}</td>
                       <td>{{ value['data']['nowPrice']/1000000000 if key.startswith('bnb') else value['data']['price']/1000000000 }}</td>
                       <td class="d-none d-lg-table-cell">{{ value['data']['hashrate'] if key.startswith('bnb') else '-'}}</td>
                       <td class="d-none d-lg-table-cell">{{ "%.2f"|format(value['data']['nowPrice']/1000000000/value['data']['hashrate']) if key.startswith('bnb') else '-'}}</td>
