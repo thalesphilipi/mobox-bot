@@ -70,6 +70,7 @@ DATA_MOMOS_PATH = 'data/momos.json'
 DATA_FILTERS_PATH = 'data/filters.json'
 DATA_BOUGHTS_PATH = 'data/bought.json'
 DATA_GEMS_PATH = 'data/gems.json'
+DATA_GWEI_PATH = 'data/gwei.json'
 
 def open_dict(path : str) -> dict:
     try:
@@ -90,6 +91,7 @@ data_momos = open_dict(DATA_MOMOS_PATH)
 data_gems = open_dict(DATA_GEMS_PATH)
 data_filters = open_dict(DATA_FILTERS_PATH)
 data_boughts = open_dict(DATA_BOUGHTS_PATH)
+data_gwei = open_dict(DATA_GWEI_PATH)
 
 
 # further constants
@@ -234,10 +236,19 @@ async def set_bid(data : dict, ismomo=True):
                     nonce = current_nonce + 1
                     current_nonce = nonce
 
+            gwei = w3.toWei('15', 'gwei')
+            if ismomo:
+                prototype = str(data['prototype'])
+                value = str(data_gwei[data_momos[prototype]['quality']]) if prototype in data_momos else '5'
+                if prototype not in data_momos:
+                    logging.warning(f'Could not find momo with id {prototype}')
+                    
+                gwei = w3.toWei(value, 'gwei')
+
             transaction = transaction.buildTransaction({
                 'chainId': 56,
                 'gas': 800000,
-                'gasPrice': w3.toWei('15', 'gwei'),
+                'gasPrice': gwei,
                 'nonce': nonce
             })
 
@@ -363,6 +374,7 @@ async def index(request: web.Request):
     'data': {
         'momo' : data_momos,
         'gem' : data_gems,
+        'gwei' : data_gwei,
         'filter' : data_filters,
         'bought' : data_boughts,
         'quality': momo_qualities,
@@ -406,6 +418,25 @@ async def delete_filter(request: web.Request):
     persist_dict(DATA_FILTERS_PATH, data_filters)
 
     return web.json_response({'msg' : 'deleted'})
+
+
+@routes.post('/gwei')
+async def post_gwei(request: web.Request):
+
+    global data_gwei
+
+    id = request.rel_url.query['id']
+    value = int(request.rel_url.query['value'])
+
+    data_gwei[id] = value
+    persist_dict(DATA_GWEI_PATH, data_gwei)
+    return web.json_response({'value' : value})
+
+
+@routes.get('/gwei')
+async def get(request: web.Request):
+    return web.json_response(data_gwei)
+
 
 @routes.post('/start')
 async def start_bot(request: web.Request):

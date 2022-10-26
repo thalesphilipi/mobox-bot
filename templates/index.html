@@ -32,61 +32,86 @@
             </div>
         </div>
         <div style="width: 60%;" class="container rounded bg-light border px-5 py-3 mt-2">
-            <div class="row">
-                <form id="filter" action="/filter" method="post">
-                    <div class="form-group">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="type-input" name="type" value="quality" hidden>
-                            <div class="input-group-prepend">
-                                <button class="btn btn-outline-secondary dropdown-toggle input-group-text" id="type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Quality</button>
-                                <div class="dropdown-menu">
-                                  <a class="dropdown-item settype">Momo</a>
-                                  <a class="dropdown-item settype">Quality</a>
-                                  <a class="dropdown-item settype">Gem</a>
+            <div class="row mb-2">
+                <div class="col-lg-8">
+                    <form id="filter" action="/filter" method="post">
+                        <div class="form-group">
+                            <div class="input-group mb-1">
+                                <input type="text" class="form-control" id="type-input" name="type" value="quality" hidden>
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary dropdown-toggle input-group-text" id="type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Quality</button>
+                                    <div class="dropdown-menu">
+                                      <a class="dropdown-item settype">Momo</a>
+                                      <a class="dropdown-item settype">Quality</a>
+                                      <a class="dropdown-item settype">Gem</a>
+                                    </div>
                                 </div>
+        
+                                <input class="form-control" type="text" id="quality" name="quality" list="qualities" placeholder="Select Quality">
+                                <datalist id="qualities">
+                                    <option value=1>Common</option>              
+                                    <option value=2>Uncommon</option>              
+                                    <option value=3>Unique</option>              
+                                    <option value=4>Rare</option>              
+                                    <option value=5>Epic</option>              
+                                    <option value=6>Legendary</option>              
+                                </datalist>
+        
+                                <input class="form-control" type="text" id="momo" name="momo" list="momos" placeholder="Select Momo" style="display: none;">
+                                <datalist id="momos">
+                                    {% for key, value in data['momo'].items() %}
+                                    <option value={{key}}>{{value.name}} {{data['quality'][value.quality|int]}}</option>
+                                    {% endfor %}
+                                </datalist>
+        
+        
+                                <input class="form-control" type="text" id="gem" name="gem" list="gems" placeholder="Select Gem" style="display: none;">
+                                <datalist id="gems">
+                                    {% for key, value in data['gem'].items() %}
+                                    <option value={{key}}>{{value.name}} {{value.level}}</option>
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="filter-input" name="filterby" value="price" hidden>
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary dropdown-toggle input-group-text" id="filterby" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Price</button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item setfilterby">Price</a>
+                                        <a class="dropdown-item setfilterby">Hash</a>
+                                    </div>
+                                </div>
+                                <input type="number" class="form-control" step="0.01" id="price" name="price" placeholder="Price Below">
+                                <input type="number" class="form-control" step="0.01" id="hash" name="hash" placeholder="Hash rate Below" style="display: none;">    
+         
+                                <button type="submit" class="btn btn-secondary ml-1">Add filter</button>
                             </div>
     
-                            <input class="form-control" type="text" id="quality" name="quality" list="qualities" placeholder="Select Quality">
-                            <datalist id="qualities">
-                                <option value=1>Common</option>              
-                                <option value=2>Uncommon</option>              
-                                <option value=3>Unique</option>              
-                                <option value=4>Rare</option>              
-                                <option value=5>Epic</option>              
-                                <option value=6>Legendary</option>              
-                            </datalist>
-    
-                            <input class="form-control" type="text" id="momo" name="momo" list="momos" placeholder="Select Momo" style="display: none;">
-                            <datalist id="momos">
-                                {% for key, value in data['momo'].items() %}
-                                <option value={{key}}>{{value.name}} {{data['quality'][value.quality|int]}}</option>
-                                {% endfor %}
-                            </datalist>
-    
-    
-                            <input class="form-control" type="text" id="gem" name="gem" list="gems" placeholder="Select Gem" style="display: none;">
-                            <datalist id="gems">
-                                {% for key, value in data['gem'].items() %}
-                                <option value={{key}}>{{value.name}} {{value.level}}</option>
-                                {% endfor %}
-                            </datalist>
-                            <input type="text" class="form-control" id="filter-input" name="filterby" value="price" hidden>
-                            <div class="input-group-prepend">
-                                <button class="btn btn-outline-secondary dropdown-toggle input-group-text" id="filterby" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Price</button>
-                                <div class="dropdown-menu">
-                                    <a class="dropdown-item setfilterby">Price</a>
-                                    <a class="dropdown-item setfilterby">Hash</a>
-                                </div>
-                            </div>
-    
-                            <input type="number" class="form-control" step="0.01" id="price" name="price" placeholder="Price Below">
-                            <input type="number" class="form-control" step="0.01" id="hash" name="hash" placeholder="Hash rate Below" style="display: none;">    
-     
-                            <button type="submit" class="btn btn-secondary">Add filter</button>
                         </div>
+                    </form>
+                </div>
+                <div class="col-lg-4">
 
+                    <div class="input-group  mb-1">
+                        <div class="input-group-prepend">
+                            <button class="btn btn-outline-secondary dropdown-toggle input-group-text input-block-level" data-value="0" id="gwei" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Gwei</button>
+                            <div class="dropdown-menu">
+                              <a data-value="1" class="dropdown-item setgwei">Common</a>
+                              <a data-value="2" class="dropdown-item setgwei">Uncommon</a>
+                              <a data-value="3" class="dropdown-item setgwei">Unique</a>
+                              <a data-value="4" class="dropdown-item setgwei">Rare</a>
+                              <a data-value="5" class="dropdown-item setgwei">Epic</a>
+                              <a data-value="6" class="dropdown-item setgwei">Legendary</a>
+                            </div>
+                        </div>
                     </div>
-                </form>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="gwei-visual" name="gwei" placeholder="Gwei" disabled>
+                        <button id="changegwei" class="btn btn-secondary ml-1">Change</button>
+                        <button id="savegwei" class="btn btn-secondary ml-1" hidden>Save</button>
+                    </div>
+
+                </div>
             </div>
             <div class="row">
                 {% if data['filter'] %}
@@ -171,6 +196,42 @@
                 $('button#type').html(data)
                 $('#gem, #momo, #quality').hide()
                 $(`#${data.toLowerCase()}`).show()
+            });
+        });
+        $(function() {
+            $('a.setgwei').on('click', function(e) {
+
+                $.get('/gwei',
+                function(data) {
+                    value = e.target.getAttribute('data-value')
+                    inner = e.target.innerHTML
+                    $('#gwei').attr('data-value', value)
+                    $('#gwei-visual').val(data[value])
+                    $('button#gwei').html(inner)
+                });
+
+            });
+        });
+        $(function() {
+            $('#changegwei').on('click', function(e) {
+                $('#changegwei').attr('hidden', true);
+                $('#savegwei').attr('hidden', false);
+                $('#gwei-visual').prop('disabled', false)
+            });
+        });
+        $(function() {
+            $('#savegwei').on('click', function(e) {
+
+                id = $('#gwei').attr('data-value')
+                value = $('#gwei-visual').val()
+                
+                $.post(`/gwei?id=${id}&value=${value}`,
+                function(data) {
+                    $('#changegwei').attr('hidden', false);
+                    $('#savegwei').attr('hidden', true);
+                    $('#gwei-visual').val(data['value'])
+                    $('#gwei-visual').prop('disabled', true)
+                });
             });
         });
         $(function() {
