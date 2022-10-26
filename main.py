@@ -91,7 +91,11 @@ data_momos = open_dict(DATA_MOMOS_PATH)
 data_gems = open_dict(DATA_GEMS_PATH)
 data_filters = open_dict(DATA_FILTERS_PATH)
 data_boughts = open_dict(DATA_BOUGHTS_PATH)
+
 data_gwei = open_dict(DATA_GWEI_PATH)
+if len(data_gwei) == 0:
+    data_gwei = {"1": 5, "2": 5, "3": 5, "4": 5, "5": 5, "6": 5}
+    persist_dict(DATA_GWEI_PATH, data_gwei)
 
 
 # further constants
@@ -426,11 +430,12 @@ async def post_gwei(request: web.Request):
     global data_gwei
 
     id = request.rel_url.query['id']
-    value = int(request.rel_url.query['value'])
+    value = request.rel_url.query['value']
 
-    data_gwei[id] = value
-    persist_dict(DATA_GWEI_PATH, data_gwei)
-    return web.json_response({'value' : value})
+    if value != '':
+        data_gwei[id] = int(value)
+        persist_dict(DATA_GWEI_PATH, data_gwei)
+        return web.json_response({'value' : int(value)})
 
 
 @routes.get('/gwei')

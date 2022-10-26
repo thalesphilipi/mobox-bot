@@ -84,7 +84,7 @@
                                 <input type="number" class="form-control" step="0.01" id="price" name="price" placeholder="Price Below">
                                 <input type="number" class="form-control" step="0.01" id="hash" name="hash" placeholder="Hash rate Below" style="display: none;">    
          
-                                <button type="submit" class="btn btn-secondary ml-1">Add filter</button>
+                                <button type="submit" class="btn btn-outline-secondary ml-1">Add filter</button>
                             </div>
     
                         </div>
@@ -94,7 +94,7 @@
 
                     <div class="input-group  mb-1">
                         <div class="input-group-prepend">
-                            <button class="btn btn-outline-secondary dropdown-toggle input-group-text input-block-level" data-value="0" id="gwei" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Gwei</button>
+                            <button class="btn btn-outline-secondary dropdown-toggle input-group-text input-block-level" data-value="1" id="gwei" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Common</button>
                             <div class="dropdown-menu">
                               <a data-value="1" class="dropdown-item setgwei">Common</a>
                               <a data-value="2" class="dropdown-item setgwei">Uncommon</a>
@@ -104,11 +104,11 @@
                               <a data-value="6" class="dropdown-item setgwei">Legendary</a>
                             </div>
                         </div>
+                        <input type="number" class="form-control" id="gwei-visual" name="gwei" value="{{data['gwei']['1']}}" disabled>
                     </div>
                     <div class="input-group">
-                        <input type="number" class="form-control" id="gwei-visual" name="gwei" placeholder="Gwei" disabled>
-                        <button id="changegwei" class="btn btn-secondary ml-1">Change</button>
-                        <button id="savegwei" class="btn btn-secondary ml-1" hidden>Save</button>
+                        <button id="changegwei" class="btn btn-outline-secondary btn-block">Change Gwei</button>
+                        <button id="savegwei" class="btn btn-outline-secondary btn-block" hidden>Save Gwei</button>
                     </div>
 
                 </div>
@@ -215,7 +215,8 @@
         $(function() {
             $('#changegwei').on('click', function(e) {
                 $('#changegwei').attr('hidden', true);
-                $('#savegwei').attr('hidden', false);
+                $('#changegwei').removeClass('btn-block');
+                $('#savegwei').attr('hidden', false);                
                 $('#gwei-visual').prop('disabled', false)
             });
         });
@@ -228,6 +229,7 @@
                 $.post(`/gwei?id=${id}&value=${value}`,
                 function(data) {
                     $('#changegwei').attr('hidden', false);
+                    $('#changegwei').addClass('btn-block');
                     $('#savegwei').attr('hidden', true);
                     $('#gwei-visual').val(data['value'])
                     $('#gwei-visual').prop('disabled', true)
